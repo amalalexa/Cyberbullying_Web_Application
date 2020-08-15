@@ -20,19 +20,27 @@ def classify():
     global tokenizer
 
     post = request.form['post']
+    copy_post = post
     post = post_tokenizing_dataset3(post)
-    tokenized_post = tokenizer.tokenize(post)
-    tokenized_sequence = [tokenizer.convert_tokens_to_ids(tokenized_post)]
-    test_padded = pad_sequences(
-        tokenized_sequence, maxlen=10, padding="post", truncating="post"
-    )
-    predicted_value = classification_model.predict(test_padded)
-    if predicted_value[0]>0.7:
-        result="The tweet has CyberBullying content !!!"
+    if post is not None:
+        tokenized_post = tokenizer.tokenize(post)
+        print(tokenized_post)
+        tokenized_sequence = [tokenizer.convert_tokens_to_ids(tokenized_post)]
+        test_padded = pad_sequences(
+            tokenized_sequence, maxlen=10, padding="post", truncating="post"
+        )
+        predicted_value = classification_model.predict(test_padded)
+        if predicted_value[0] > 0.7:
+            result = "The tweet has CyberBullying content !!!"
+            bully = True
+        else:
+            result = "The tweet is fine to Post !!!"
+            bully = False
     else:
-        result = "The tweet is fine to Post !!!"
+        result = "The tweet is so less to process !!!"
+        bully = "XXX"
 
-    return render_template("home.html", tweet=result)
+    return render_template("home.html", tweet=result, post = copy_post, bully = bully)
 
 
 def post_tokenizing_dataset3(text):
@@ -55,12 +63,14 @@ def post_tokenizing_dataset3(text):
 
 
 if __name__ == '__main__':
+
     classification_model = load_model('CNN_MODEL_FOR_POF.PKL')
     BertTokenizer = bert_tokenization.FullTokenizer
     bert_layer = hub.KerasLayer("https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/2", trainable=False)
     vocabulary_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
     to_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
     tokenizer = BertTokenizer(vocabulary_file, to_lower_case)
+
     app.run()
 
 
